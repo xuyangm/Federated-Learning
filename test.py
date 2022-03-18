@@ -1,4 +1,5 @@
 import unittest
+from utils.selection import select_clients
 from model_manager import *
 from data_manager import DatasetCreator
 from torch.utils.data import DataLoader
@@ -53,6 +54,29 @@ class MyTestCase(unittest.TestCase):
         self.assertIsInstance(acc, float)
         self.assertIsInstance(loss, float)
 
+    def test_model_avg(self):
+        data_creator = DatasetCreator(num_clients=100, dataset_name='MNIST', partition_method='uniform')
+        model_mgrs = []
+        for i in range(3):
+            model_mgrs.append(ModelManager(model_name='TwoNN', num_classes=10))
+        model_mgrs[1].init_data(1, data_creator, 20)
+        model_mgrs[2].init_data(2, data_creator, 20)
+        model_mgrs[1].train(1)
+        model_mgrs[0].init_data(0, data_creator, 20)
+        model_mgrs[0].retrieve_update(1, model_mgrs[1].get_model_state(), model_mgrs[1].get_training_data_len())
+        model_mgrs[2].train(5)
+        model_mgrs[0].retrieve_update(2, model_mgrs[2].get_model_state(), model_mgrs[2].get_training_data_len())
+        model_mgrs[0].update_model()
+        model_mgrs[0].test()
+
+    def test_selection(self):
+        cids = [x for x in range(10)]
+        selected = select_clients(cids, 4, 'random')
+        print(selected)
+
 
 if __name__ == '__main__':
-    unittest.main()
+    # unittest.main()
+    suite = unittest.TestSuite()
+    suite.addTest(MyTestCase('test_model_avg'))
+    unittest.TextTestRunner(verbosity=2).run(suite)
