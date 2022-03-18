@@ -4,7 +4,7 @@ import numpy as np
 from model_manager import Aggregator, Client
 from data_manager import DatasetCreator
 from utils.selection import select_clients
-from torch.utils.tensorboard import SummaryWriter
+from utils.log_helper import record
 
 
 def set_env(seed=5):
@@ -65,10 +65,7 @@ def run():
         acc, loss = server.test()
 
         print("Round {}, accuracy: {}%, loss: {}".format(cur_rd, round(acc*100, 2), round(loss, 2)))
-        writer = SummaryWriter("{}-{}-{}".format(model_name, partition_type, sample_method))
-        writer.add_scalar("loss", loss, cur_rd)
-        writer.add_scalar("accuracy(%)", acc * 100, cur_rd)
-        writer.close()
+        record(cur_rd, model_name, partition_type, sample_method, acc, loss)
 
 
 if __name__ == '__main__':
