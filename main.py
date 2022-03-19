@@ -1,9 +1,10 @@
+import csv
+import time
 import torch
 import random
 import numpy as np
 from model_manager import Aggregator, Client
 from data_manager import DatasetCreator
-from utils.selection import select_clients
 from utils.log_helper import record
 
 
@@ -19,7 +20,7 @@ def run():
     model_name = 'TwoNN'
     dataset_name = 'MNIST'
     partition_type = 'dirichlet'
-    sample_method = 'random'
+    sample_method = 'bandit'
     rd = 50
     num_clients = 100
     sample_sz = 10
@@ -31,19 +32,18 @@ def run():
 
     data_creator = DatasetCreator(num_clients, dataset_name, partition_type, alpha=0.1)
 
-    client_ids = [_ for _ in range(1, num_clients+1)]
     clients = {}
     for i in range(num_clients):
         clients[i+1] = Client(model_name, num_classes=10)
         clients[i+1].init_data(i+1, data_creator, batch_sz)
 
-    server = Aggregator(model_name, num_classes=10)
+    server = Aggregator(model_name, num_classes=10, num_clients=num_clients)
     server.init_data(data_creator, batch_sz)
-    server.test()
 
     for cur_rd in range(1, rd+1):
+        duration = time.time()
         # select clients
-        participants = select_clients(client_ids, sample_sz, sample_method)
+        participants = server.select_clients(sample_sz, sample_method)
 
         # server send global model to clients
         m_stat = server.get_model_state()
@@ -58,14 +58,14 @@ def run():
         for cid in participants:
             server.retrieve_update(cid, clients[cid].get_model_state(), clients[cid].get_training_data_len())
 
-        # server updates global model
-        server.update_model()
-
-        # server tests global model
-        acc, loss = server.test()
-
-        print("Round {}, accuracy: {}%, loss: {}".format(cur_rd, round(acc*100, 2), round(loss, 2)))
-        record(cur_rd, model_name, partition_type, sample_method, acc, loss)
+        # server updates and tests global model
+        if sample_method == 'bandit':
+            server.update_shapley_values(10)
+        else:
+            server.update_model()
+            server.accuracy, server.loss = server.test(server.model)
+        print("Round {}, accuracy: {}%, loss: {}, time: {} min".format(cur_rd, round(server.accuracy*100, 2), round(server.loss, 2), round((time.time()-duration)/60, 2)))
+        record(cur_rd, model_name, partition_type, sample_method, sample_sz, server.accuracy, server.loss)
 
 
 if __name__ == '__main__':

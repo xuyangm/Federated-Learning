@@ -6,7 +6,7 @@ def FedAvg(client_ids, local_updates, coefficients):
     """Average local models of clients in client_ids"""
 
     if len(client_ids) < 1 or len(client_ids) > len(local_updates):
-        print("ERROR: invalid client_ids")
+        print("ERROR: invalid client_ids, length {}".format(len(client_ids)))
         exit(-1)
 
     avg_res = copy.deepcopy(local_updates[client_ids[0]])
