@@ -6,6 +6,7 @@
     - [x] Random selection
     - [x] Shapley Value based selection
     - [ ] Loss based selection
+    - [ ] Shapley Value and Time Estimation based selection
 - [ ] Different Training Strategies
     - [ ] Pre-training Strategy: perform pre-training for K rounds to get information of clients as much as possible
 - [ ] Different Aggregation Strategies
