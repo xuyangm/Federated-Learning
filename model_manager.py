@@ -27,11 +27,13 @@ class Aggregator(object):
         self.avg_shapley_values = {}
         self.last_involved_round = {}
         self.num_join = {}
+        self.val_loader = None
         self.test_loader = None
         self.unexplored = [_ for _ in range(1, num_clients+1)]
         self.explored = []
         self.explore_ratio = 0.9
         self.cur_rd = 1
+        self.val_data_len = 0
 
     def __init_model(self):
         if self.model_name == 'TwoNN':
@@ -49,9 +51,12 @@ class Aggregator(object):
             exit(-1)
 
     def init_data(self, data_creator, batch_sz, time_out=0, num_workers=0):
+        self.val_loader = data_creator.get_loader(client_id=0, batch_sz=batch_sz, is_test=False, time_out=time_out,
+                                                  num_workers=num_workers)
+        self.val_data_len = data_creator.get_val_data_len()
         self.test_loader = data_creator.get_loader(batch_sz=batch_sz, is_test=True, time_out=time_out,
                                                    num_workers=num_workers)
-        self.accuracy, self.loss = self.test(self.model)
+        self.accuracy, self.loss = self.validate(self.model)
 
     def select_clients(self, sample_sz, sample_method='random'):
         if sample_method == 'random':
@@ -81,6 +86,29 @@ class Aggregator(object):
             print("ERROR: not init_data yet.")
             exit(-1)
         return len(self.test_loader.dataset)
+
+    def validate(self, model):
+        model = model.to(device=self.device)
+        model.eval()
+
+        criterion = torch.nn.CrossEntropyLoss().cuda()
+        accuracy = loss = 0
+
+        for (X, y) in self.val_loader:
+            X = X.to(device=self.device)
+            y = y.to(device=self.device)
+            output = model(X)
+            loss += criterion(output, y).item()
+            predicted = output.argmax(dim=1, keepdim=True)
+            accuracy += predicted.eq(y.view_as(predicted)).sum().item()
+
+        accuracy /= self.val_data_len
+        loss /= len(self.val_loader)
+
+        torch.cuda.empty_cache()
+        model.to('cpu')
+
+        return accuracy, loss
 
     def test(self, model):
         # print("### Testing...")
@@ -187,6 +215,7 @@ class Aggregator(object):
 
         model_state = FedAvg(client_ids, self.collected_updates, coefficients)
         self.model.load_state_dict(model_state)
+        self.accuracy, self.loss = self.validate(self.model)
         self.collected_updates = None
         self.absolute_weights = None
         gc.collect()
@@ -211,7 +240,7 @@ class Aggregator(object):
         if do_update:
             self.model.load_state_dict(model_state)
 
-        acc, loss = self.test(model)
+        acc, loss = self.validate(model)
         if do_update:
             self.accuracy = acc
             self.loss = loss

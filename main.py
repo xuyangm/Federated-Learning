@@ -1,11 +1,10 @@
-import csv
 import time
 import torch
 import random
 import numpy as np
 from model_manager import Aggregator, Client
 from data_manager import DatasetCreator
-from utils.log_helper import record
+from utils.log_helper import *
 
 
 def set_env(seed=5):
@@ -19,7 +18,7 @@ def set_env(seed=5):
 def run():
     model_name = 'CNN2'
     dataset_name = 'CIFAR10'
-    partition_type = 'dirichlet'
+    partition_type = 'uniform'
     sample_method = 'bandit'
     rd = 100
     num_clients = 100
@@ -63,9 +62,13 @@ def run():
             server.update_shapley_values(10)
         else:
             server.update_model()
-            server.accuracy, server.loss = server.test(server.model)
-        print("Round {}, accuracy: {}%, loss: {}, time: {} min".format(cur_rd, round(server.accuracy*100, 2), round(server.loss, 2), round((time.time()-duration)/60, 2)))
-        record(cur_rd, model_name, partition_type, sample_method, sample_sz, server.accuracy, server.loss)
+        accuracy, loss = server.test(server.model)
+        print("Validation Round {}, accuracy: {}%, loss: {}".format(cur_rd, round(server.accuracy*100, 2), round(server.loss, 2)))
+        print("Test Round {}, accuracy: {}%, loss: {}, time: {} min".format(cur_rd, round(accuracy * 100, 2),
+                                                                       round(loss, 2),
+                                                                       round((time.time() - duration) / 60, 2)))
+        record_val_result(cur_rd, model_name, partition_type, sample_method, sample_sz, server.accuracy, server.loss)
+        record_test_result(cur_rd, model_name, partition_type, sample_method, sample_sz, accuracy, loss)
 
 
 if __name__ == '__main__':
