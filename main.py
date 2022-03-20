@@ -17,11 +17,11 @@ def set_env(seed=5):
 
 
 def run():
-    model_name = 'TwoNN'
-    dataset_name = 'MNIST'
+    model_name = 'CNN2'
+    dataset_name = 'CIFAR10'
     partition_type = 'dirichlet'
     sample_method = 'bandit'
-    rd = 50
+    rd = 100
     num_clients = 100
     sample_sz = 10
     batch_sz = 20

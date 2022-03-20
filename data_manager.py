@@ -103,6 +103,20 @@ class DatasetCreator(object):
                 transform=test_transform
             )
 
+        elif self.dt_name == 'CIFAR10':
+            training_dataset = datasets.CIFAR10(
+                root='data/CIFAR10',
+                train=True,
+                download=True,
+                transform=training_transform
+            )
+            test_dataset = datasets.CIFAR10(
+                root='data/CIFAR10',
+                train=False,
+                download=True,
+                transform=test_transform
+            )
+
         else:
             print("ERROR: Unknown dataset type.")
             exit(-1)
@@ -115,6 +129,16 @@ class DatasetCreator(object):
         if self.dt_name == 'MNIST':
             training_transform = transforms.ToTensor()
             test_transform = transforms.ToTensor()
+
+        elif self.dt_name == 'CIFAR10':
+            training_transform = transforms.Compose([
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+            ])
+
+            test_transform = transforms.Compose([
+                transforms.ToTensor(),
+            ])
 
         else:
             print("ERROR: Unknown dataset type.")

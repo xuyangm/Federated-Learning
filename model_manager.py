@@ -38,6 +38,8 @@ class Aggregator(object):
             return TwoNN(num_classes=self.num_classes)
         elif self.model_name == 'CNN':
             return CNN(num_classes=self.num_classes)
+        elif self.model_name == 'CNN2':
+            return CNN2(num_classes=self.num_classes)
         elif self.model_name == 'shufflenet_v2_x2_0':
             return torchvision.models.shufflenet_v2_x2_0(num_classes=self.num_classes)
         elif self.model_name == 'mobilenet_v2':
@@ -239,6 +241,8 @@ class Client(object):
             return TwoNN(num_classes=self.num_classes)
         elif self.model_name == 'CNN':
             return CNN(num_classes=self.num_classes)
+        elif self.model_name == 'CNN2':
+            return CNN2(num_classes=self.num_classes)
         elif self.model_name == 'shufflenet_v2_x2_0':
             return torchvision.models.shufflenet_v2_x2_0(num_classes=self.num_classes)
         elif self.model_name == 'mobilenet_v2':
