@@ -23,4 +23,6 @@
     - [ ] Dirichlet, Random, CIFAR10
     - [ ] Dirichlet, Bandit, CIFAR10
     - [ ] Misreport weight, epoch, lr
-     
+
+## How to run?
+python main.py
